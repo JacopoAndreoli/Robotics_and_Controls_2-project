@@ -1,0 +1,101 @@
+%% trial of the loop to insert into the project outline 
+estimated_after.x = zeros(form_auv.n,1);
+estimated_after.y = zeros(form_auv.n,1);
+
+estimated_before.x = zeros(form_auv.n,1);
+estimated_before.y = zeros(form_auv.n,1);
+
+estimated_variation.x = zeros(form_auv.n,1);
+estimated_variation.y = zeros(form_auv.n,1);
+
+
+j = 1;
+%number of iteration for the consensus
+n_iteration = 25;
+
+% creation of the consensus matrix; for further details open the function
+% script 
+W = graph_setup(form_auv);
+close all;
+%waitforbuttonpress;
+
+%we run an estimation outside the loop so as to consider also the first
+% variation induced by the motion of the UAV
+[estimated_before.x, estimated_before.y, convex_hull_estimated_before] = pose_estimation(ugv,form_auv,1);
+
+%%series of plot 
+% plot_with_convexhull(convex_hull_estimated_before);
+% hold on 
+% plot_actual_formation(form_auv);
+%waitforbuttonpress;
+% close all
+% plot_with_convexhull(convex_hull_estimated_before);
+% hold on
+% correct_formation(ugv,form_auv,j);
+%waitforbuttonpress;
+
+% the loop do only one iteration (for now)
+for i = 1:1
+    % next iteration considered after initial condition considered outside
+    % the loop 
+    j = j+2000;
+
+    %close all
+    [estimated_after.x, estimated_after.y, convex_hull_estimated_after] = pose_estimation(ugv,form_auv,j);
+
+% series of possible plot
+%     plot_with_convexhull(convex_hull_estimated_after);
+%     hold on 
+%     plot_actual_formation(form_auv);
+%     %waitforbuttonpress;
+%     close all
+%     plot_with_convexhull(convex_hull_estimated_after);
+%     hold on
+%     correct_formation(ugv,form_auv,j);
+    %waitforbuttonpress;
+    
+    for k= 1:form_auv.n
+        estimated_variation.x(k) = estimated_after.x(k) - estimated_before.x(k);
+        estimated_variation.y(k) = estimated_after.y(k) - estimated_before.y(k);
+    end 
+    [consensus_average_x, average_x, last_consensus_x] = Consensus_iteration(n_iteration, ...
+        estimated_variation.x, form_auv, W);
+    [consensus_average_y, average_y, last_consensus_y] = Consensus_iteration(n_iteration, ...
+        estimated_variation.y, form_auv, W);
+
+    % last consensus_x, lat_consensus_y are the final estimation
+    % of vector in both x,y direction starting from UAVs measruements 
+
+    
+
+    % parte gioele 
+
+    % here, the UAVs move as formation in the direction suggested byt the
+    % estimation 
+
+
+% update necessary to make the cycle to continously iterate 
+    estimated_before.x = estimated_after.x;
+    estimated_before.y = estimated_after.y;
+   
+end
+
+convergence_UAV = zeros(n_iteration ,form_auv.n); 
+for i = 1 : n_iteration
+    for j = 1:form_auv.n
+     convergence_UAV(i,j) = consensus_average_x{i}(j);
+    end
+end
+
+for k = 1:form_auv.n
+     plot(convergence_UAV(:,k), '-x')
+     hold on
+end
+
+ 
+
+
+
+
+
+
